@@ -87,14 +87,14 @@ const SignupForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-white to-blue-100 flex items-center justify-center p-4">
+      <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl p-10 w-full max-w-md border border-blue-100 hover:shadow-blue-200 transition-shadow duration-300">
         <div className="text-center mb-8">
-          <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserPlus className="w-8 h-8 text-green-600" />
+          <div className="bg-gradient-to-tr from-blue-400 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+            <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join our event management platform</p>
+          <h1 className="text-3xl font-extrabold text-blue-900 mb-2 drop-shadow">Create Account</h1>
+          <p className="text-gray-700">Sign up to get started</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

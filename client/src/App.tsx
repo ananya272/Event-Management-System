@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import AdminPanel from './components/AdminPanel';
 import OrganizerPanel from './components/OrganizerPanel';
 import AttendeePanel from './components/AttendeePanel';
+import HomePage from './components/HomePage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -75,6 +76,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AppContent: React.FC = () => {
+  const { user } = useAuth();
   return (
     <Router>
       <Routes>
@@ -93,7 +95,7 @@ const AppContent: React.FC = () => {
             <Dashboard />
           </ProtectedRoute>
         } />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <HomePage />} />
       </Routes>
     </Router>
   );

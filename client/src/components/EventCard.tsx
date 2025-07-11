@@ -46,17 +46,17 @@ const EventCard: React.FC<EventCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+    <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden border border-blue-100 hover:border-blue-400 group">
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{event.title}</h3>
-            <p className="text-gray-600 text-sm mb-3">{event.description}</p>
+            <h3 className="text-2xl font-extrabold text-blue-900 mb-2 group-hover:text-blue-700 transition-colors duration-200 drop-shadow">{event.title}</h3>
+            <p className="text-gray-700 text-base mb-3">{event.description}</p>
           </div>
           {event.averageRating && (
-            <div className="flex items-center space-x-1 bg-yellow-50 px-3 py-1 rounded-full">
-              <Star className="w-4 h-4 text-yellow-500 fill-current" />
-              <span className="text-sm font-medium text-yellow-700">
+            <div className="flex items-center space-x-1 bg-gradient-to-tr from-yellow-200 to-yellow-50 px-3 py-1 rounded-full shadow-md">
+              <Star className="w-4 h-4 text-yellow-500 fill-current animate-pulse" />
+              <span className="text-sm font-bold text-yellow-700">
                 {event.averageRating.toFixed(1)}
               </span>
             </div>
