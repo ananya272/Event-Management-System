@@ -76,7 +76,6 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AppContent: React.FC = () => {
-  const { user } = useAuth();
   return (
     <Router>
       <Routes>
@@ -95,7 +94,8 @@ const AppContent: React.FC = () => {
             <Dashboard />
           </ProtectedRoute>
         } />
-        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <HomePage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

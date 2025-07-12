@@ -88,7 +88,7 @@ const SignupForm: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-white to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl p-10 w-full max-w-md border border-blue-100 hover:shadow-blue-200 transition-shadow duration-300">
+      <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-10 w-full max-w-md border border-blue-100 hover:shadow-blue-200 transition-shadow duration-300">
         <div className="text-center mb-8">
           <div className="bg-gradient-to-tr from-blue-400 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
             <UserPlus className="w-8 h-8 text-white" />
@@ -111,7 +111,7 @@ const SignupForm: React.FC = () => {
                 type="text"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 placeholder="Enter your full name"
                 required
               />
@@ -131,7 +131,7 @@ const SignupForm: React.FC = () => {
                 type="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 placeholder="Enter your email"
                 required
               />
@@ -150,7 +150,7 @@ const SignupForm: React.FC = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
                 required
               >
                 <option value="attendee">Attendee - Book and attend events</option>
@@ -173,7 +173,7 @@ const SignupForm: React.FC = () => {
                 type="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 placeholder="Create a password"
                 required
               />
@@ -194,7 +194,7 @@ const SignupForm: React.FC = () => {
                 type="password"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 placeholder="Confirm your password"
                 required
               />
@@ -219,7 +219,7 @@ const SignupForm: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
@@ -231,7 +231,7 @@ const SignupForm: React.FC = () => {
             Already have an account?{' '}
             <button
               onClick={() => window.location.href = '/login'}
-              className="text-green-600 hover:text-green-700 font-medium transition-colors duration-200"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
             >
               Sign in here
             </button>
@@ -239,7 +239,7 @@ const SignupForm: React.FC = () => {
         </div>
 
         {/* Role Information */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
           <p className="text-xs text-gray-600 mb-3 font-medium">Account Types:</p>
           <div className="text-xs space-y-2">
             <div className="flex items-center space-x-2">

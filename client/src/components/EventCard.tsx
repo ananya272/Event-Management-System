@@ -46,7 +46,7 @@ const EventCard: React.FC<EventCardProps> = ({
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden border border-blue-100 hover:border-blue-400 group">
+    <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden border border-blue-100 hover:border-blue-400 group">
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
