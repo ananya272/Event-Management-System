@@ -11,11 +11,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const { notifications } = useData();
 
+  // Theme state
+  const [theme, setTheme] = React.useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+    }
+    return 'light';
+  });
+
+  React.useEffect(() => {
+    document.body.classList.remove('dark', 'light');
+    document.body.classList.add(theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+
   const unreadNotifications = notifications.filter(n => !n.read && n.userId === user?.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200">
-      <nav className="backdrop-blur-md bg-white/80 shadow-2xl border-b border-blue-200 sticky top-0 z-30 rounded-b-2xl mx-2 mt-2">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500">
+      <nav className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 shadow-2xl border-b border-blue-200 dark:border-gray-700 sticky top-0 z-30 rounded-b-2xl mx-2 mt-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
@@ -26,6 +47,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-6">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="mr-2 px-3 py-2 rounded-full bg-blue-50 dark:bg-gray-800 text-xl shadow hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
               <div className="relative group">
                 <Bell className="w-7 h-7 text-blue-500 hover:text-blue-700 cursor-pointer transition-colors duration-200" />
                 {unreadNotifications.length > 0 && (

@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext';
 import { Plus, Users, Star, MessageCircle, BarChart3, Loader2 } from 'lucide-react';
 import EventCard from './EventCard';
 import EventForm from './EventForm';
-import { Event } from '../types';
+import { Event, User } from '../types';
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
@@ -16,21 +16,69 @@ const AdminPanel: React.FC = () => {
     error,
     createEvent, 
     updateEvent, 
-    deleteEvent 
+    deleteEvent,
+    markEventComplete,
+    fetchAllEvents,
+    fetchAllUsers
   } = useData();
-
-  // Debug: Log organizers and loading state when they change
-  useEffect(() => {
-    console.log('AdminPanel - organizers updated:', {
-      organizers,
-      loadingOrganizers: loading.organizers,
-      organizerCount: organizers.length
-    });
-  }, [organizers, loading.organizers]);
+  
+  // Filter events for the current user (admin)
+  const adminEvents = events.filter(event => 
+    event.organizerId === user?.id || event.organizerId === user?._id
+  );
+  
+  // Filter upcoming and past events
+  const now = new Date();
+  const upcomingEvents = adminEvents.filter(
+    (event) => new Date(event.endTime) > now
+  );
+  const pastEvents = adminEvents.filter(
+    (event) => new Date(event.endTime) <= now
+  );
+  
+  // State for event management
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState('events');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completionModal, setCompletionModal] = useState<{eventId: string; status: 'completed' | 'issue'} | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [eventFilter, setEventFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  
+  // Load all users for admin
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (user?.role === 'admin') {
+        const users = await fetchAllUsers();
+        setAllUsers(users);
+      }
+    };
+    loadUsers();
+  }, [user?.role, fetchAllUsers]);
+
+  // Handle event completion
+  const handleCompleteEvent = async (eventId: string, status: 'completed' | 'issue') => {
+    try {
+      const success = await markEventComplete(eventId, status, feedbackText);
+      if (success) {
+        setCompletionModal(null);
+        setFeedbackText('');
+        await refreshData();
+      }
+    } catch (error) {
+      console.error('Error completing event:', error);
+      setErrorMessage('Failed to update event status');
+    }
+  };
+
+  // Filter events based on the selected filter
+  const filteredEvents = React.useMemo(() => {
+    if (eventFilter === 'upcoming') return upcomingEvents;
+    if (eventFilter === 'past') return pastEvents;
+    return adminEvents;
+  }, [eventFilter, upcomingEvents, pastEvents, adminEvents]);
 
   const handleCreateEvent = async (eventData: Omit<Event, 'id'>) => {
     setIsSubmitting(true);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { Event } from '../types';
+import { Event, User } from '../types';
 import { Calendar, MessageCircle, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import EventCard from './EventCard';
 import EventForm from './EventForm';
@@ -11,7 +11,57 @@ import EventForm from './EventForm';
 
 const OrganizerPanel: React.FC = () => {
   const { user } = useAuth();
-  const { events, markEventComplete, updateEvent, organizers } = useData();
+  const { events, markEventComplete, updateEvent, organizers: allOrganizers } = useData();
+  
+  // Ensure the current user is in the organizers list
+  const [organizers, setOrganizers] = useState<User[]>(allOrganizers || []);
+  
+  useEffect(() => {
+    if (user) {
+      const userId = user._id || user.id || '';
+      const userName = user.name || 'You';
+      const userEmail = user.email || '';
+      const now = new Date();
+      
+      if (allOrganizers && allOrganizers.length > 0) {
+        // Check if current user is already in the organizers list
+        const userIsOrganizer = allOrganizers.some(org => 
+          (org._id || org.id) === userId
+        );
+        
+        if (!userIsOrganizer) {
+          // Add current user to organizers list if they're not already there
+          setOrganizers([
+            {
+              _id: userId,
+              id: userId,
+              name: userName,
+              email: userEmail,
+              role: 'organizer',
+              createdAt: now,
+              cancelledBookings: 0,
+              isBlocked: false
+            },
+            ...allOrganizers
+          ]);
+        } else {
+          setOrganizers(allOrganizers);
+        }
+      } else {
+        // If no organizers, create a list with just the current user
+        setOrganizers([{
+          _id: userId,
+          id: userId,
+          name: userName,
+          email: userEmail,
+          role: 'organizer',
+          createdAt: now,
+          cancelledBookings: 0,
+          isBlocked: false
+        }]);
+      }
+    }
+  }, [allOrganizers, user]);
   const [completionModal, setCompletionModal] = useState<{
     eventId: string;
     status: 'completed' | 'issue';
@@ -89,7 +139,27 @@ const OrganizerPanel: React.FC = () => {
     if (!editingEvent) return false;
     
     try {
-      const success = await updateEvent(editingEvent.id, eventData);
+      // Ensure we have a valid organizer ID
+      let organizerId = '';
+      if (eventData.organizerId) {
+        organizerId = eventData.organizerId;
+      } else if (editingEvent.organizerId) {
+        if (typeof editingEvent.organizerId === 'string') {
+          organizerId = editingEvent.organizerId;
+        } else if (editingEvent.organizerId && typeof editingEvent.organizerId === 'object') {
+          // TypeScript type guard to check if organizerId has _id property
+          const orgId = editingEvent.organizerId as { _id: string };
+          organizerId = orgId._id;
+        }
+      }
+      
+      // Create the update data with the organizer ID
+      const updateData = {
+        ...eventData,
+        organizerId: organizerId
+      };
+      
+      const success = await updateEvent(editingEvent.id, updateData);
       if (success) {
         setSuccessMessage('Event updated successfully!');
         setEditingEvent(null);
@@ -97,6 +167,7 @@ const OrganizerPanel: React.FC = () => {
       }
       return false;
     } catch (error) {
+      console.error('Error updating event:', error);
       setErrorMessage('Failed to update event. Please try again.');
       return false;
     }
@@ -218,34 +289,36 @@ const OrganizerPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Edit Event Modal */}
-      {editingEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Edit Event</h3>
-                <button
-                  onClick={() => setEditingEvent(null)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+      {/* Modals */}
+      <>
+        {/* Edit Event Modal */}
+        {editingEvent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Edit Event</h3>
+                  <button
+                    onClick={() => setEditingEvent(null)}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <EventForm
+                  event={editingEvent}
+                  organizers={organizers}
+                  onSubmit={handleUpdateEvent}
+                  onCancel={() => setEditingEvent(null)}
+                />
               </div>
-              
-              <EventForm
-                event={editingEvent}
-                organizers={organizers}
-                onSubmit={handleUpdateEvent}
-                onCancel={() => setEditingEvent(null)}
-              />
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Completion Modal */}
-      {completionModal && (
+        {/* Completion Modal */}
+        {completionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
             <div className="p-6">
@@ -312,6 +385,7 @@ const OrganizerPanel: React.FC = () => {
           </div>
         </div>
       )}
+      </>
     </div>
   );
 };

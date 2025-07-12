@@ -21,26 +21,37 @@ const EventForm: React.FC<EventFormProps> = ({ event, organizers, onSubmit, onCa
   });
   const [validationError, setValidationError] = useState('');
 
-  // Debug: Log organizers
-  console.log('EventForm organizers:', organizers);
+  // Debug: Log organizers and event data
+  console.log('EventForm - organizers:', organizers);
+  console.log('EventForm - event:', event);
 
   useEffect(() => {
     if (event) {
+      // When editing an event, use the event's organizerId or default to the first available organizer
+      const organizerId = event.organizerId || 
+                        (organizers.length > 0 ? (organizers[0]._id || organizers[0].id) : '');
+      
+      // Ensure startTime and endTime are Date objects before calling toISOString
+      const startTime = event.startTime instanceof Date ? event.startTime : new Date(event.startTime);
+      const endTime = event.endTime instanceof Date ? event.endTime : new Date(event.endTime);
+      
       setFormData({
         title: event.title,
         description: event.description,
-        startTime: event.startTime.toISOString().slice(0, 16),
-        endTime: event.endTime.toISOString().slice(0, 16),
+        startTime: startTime.toISOString().slice(0, 16),
+        endTime: endTime.toISOString().slice(0, 16),
         location: event.location,
         capacity: event.capacity,
-        organizerId: event.organizerId || '',
+        organizerId: organizerId,
       });
     } else if (organizers.length > 0) {
-      // Set default organizer when organizers are available and no event is being edited
+      // Set default organizer when creating a new event
       setFormData(prev => ({
         ...prev,
         organizerId: organizers[0]._id || organizers[0].id // Handle both MongoDB _id and client-side id
       }));
+    } else {
+      console.warn('No organizers available in EventForm');
     }
   }, [event, organizers]);
 

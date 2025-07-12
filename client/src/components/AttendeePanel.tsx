@@ -20,13 +20,51 @@ const AttendeePanel: React.FC = () => {
     comment: '',
   });
 
-  const userBookings = bookings.filter(booking => booking.attendeeId === user?.id);
+  // Debug logs
+  console.log('All bookings:', bookings);
+  console.log('Current user ID:', user?.id);
+  
+  const userBookings = bookings.filter(booking => {
+    console.log('Booking:', booking);
+    return booking.attendeeId === user?.id;
+  });
+  
+  console.log('User bookings:', userBookings);
+  
   const upcomingEvents = events.filter(event => event.status === 'upcoming');
-  const bookedEvents = userBookings.filter(booking => booking.status === 'active');
+  const bookedEvents = userBookings.filter(booking => {
+    console.log('Booking status check:', booking.id, booking.status);
+    return booking.status === 'active';
+  });
+  
+  console.log('Active bookings:', bookedEvents);
+  
   const cancelledBookings = userBookings.filter(booking => booking.status === 'cancelled').length;
   const isBlocked = cancelledBookings >= 2;
 
   const userNotifications = notifications.filter(notif => notif.userId === user?.id && !notif.read);
+
+  // Helper functions for date/time formatting
+  const formatDate = (date: string | Date): string => {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (date: string | Date): string => {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   useEffect(() => {
     // Check for events starting soon
@@ -64,38 +102,83 @@ const AttendeePanel: React.FC = () => {
     });
   };
 
-  const handleSubmitBooking = () => {
-    if (bookingModal && bookingData.name && bookingData.email && bookingData.phone) {
-      createBooking({
+  const handleSubmitBooking = async () => {
+    if (!bookingModal || !bookingData.name || !bookingData.email || !bookingData.phone) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    try {
+      const now = new Date();
+      const success = await createBooking({
         eventId: bookingModal.id,
         attendeeId: user?.id || '',
         attendeeName: bookingData.name,
         attendeeEmail: bookingData.email,
         attendeePhone: bookingData.phone,
+        status: 'active',
+        bookedAt: now
       });
-      setBookingModal(null);
-      setBookingData({ name: '', email: '', phone: '' });
+      
+      if (success) {
+        alert('Booking created successfully!');
+        setBookingModal(null);
+        setBookingData({ name: '', email: '', phone: '' });
+      } else {
+        alert('Failed to create booking. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('An error occurred while creating the booking.');
     }
   };
 
-  const handleCancelBooking = (bookingId: string) => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      cancelBooking(bookingId, user?.id || '');
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+      return;
+    }
+    
+    try {
+      const success = await cancelBooking(bookingId);
+      if (success) {
+        alert('Booking cancelled successfully');
+      } else {
+        alert('Failed to cancel booking. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert('An error occurred while cancelling the booking.');
     }
   };
 
-  const handleSubmitFeedback = () => {
-    if (feedbackModal && feedbackData.comment.trim()) {
-      submitFeedback({
+  const handleSubmitFeedback = async () => {
+    if (!feedbackModal || !feedbackData.comment.trim()) {
+      alert('Please provide your feedback');
+      return;
+    }
+    
+    try {
+      const now = new Date();
+      const success = await submitFeedback({
         eventId: feedbackModal.id,
         userId: user?.id || '',
         userRole: 'attendee',
         rating: feedbackData.rating,
         comment: feedbackData.comment,
         type: 'feedback',
+        submittedAt: now
       });
-      setFeedbackModal(null);
-      setFeedbackData({ rating: 5, comment: '' });
+      
+      if (success) {
+        alert('Thank you for your feedback!');
+        setFeedbackModal(null);
+        setFeedbackData({ rating: 5, comment: '' });
+      } else {
+        alert('Failed to submit feedback. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('An error occurred while submitting feedback.');
     }
   };
 
@@ -195,11 +278,11 @@ const AttendeePanel: React.FC = () => {
                     <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{event.startTime.toLocaleDateString()}</span>
+                        <span>{formatDate(event.startTime)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{event.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{formatTime(event.startTime)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <MapPin className="w-4 h-4" />

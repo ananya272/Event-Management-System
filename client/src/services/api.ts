@@ -45,6 +45,12 @@ class ApiService {
     return this.handleResponse<T>(response);
   }
 
+  // Public method for GET requests
+  async get<T>(endpoint: string): Promise<T> {
+    const response = await this.request<T>(endpoint, { method: 'GET' });
+    return response.data as T;
+  }
+
   // Authentication
   async login(email: string, password: string) {
     return this.request<{ user: any; token: string }>('/auth/login', {
@@ -165,6 +171,7 @@ class ApiService {
 
   async createBooking(bookingData: {
     eventId: string;
+    attendeeId?: string;
     attendeeName: string;
     attendeeEmail: string;
     attendeePhone: string;
