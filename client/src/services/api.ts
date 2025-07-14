@@ -8,8 +8,19 @@ interface ApiResponse<T> {
 }
 
 class ApiService {
+  private authToken: string | null = null;
+
+  setAuthToken(token: string | null) {
+    this.authToken = token;
+    if (token) {
+      localStorage.setItem('eventManagementToken', token);
+    } else {
+      localStorage.removeItem('eventManagementToken');
+    }
+  }
+
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('eventManagementToken');
+    const token = this.authToken || localStorage.getItem('eventManagementToken');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),

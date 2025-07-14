@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { Event, Booking, Feedback, Notification, User } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from './AuthContext';
@@ -138,19 +138,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         feedbackEnabled: eventData.feedbackEnabled || false,
       };
       
-      console.log('Sending event data to API:', formattedEvent);
-      
       const response = await apiService.createEvent(formattedEvent);
-      console.log('API Response:', response);
       
       if (response?.success) {
-        console.log('Event created successfully');
         // Refresh the events list
         await loadEvents();
         return true;
       } else {
         const errorMsg = response?.message || 'Failed to create event. Please check the form data and try again.';
-        console.error('API Error:', errorMsg);
         setError(errorMsg);
         return false;
       }
@@ -179,7 +174,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               
               // Validate the dates
               if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                console.error('Invalid date for event:', event._id);
+                // Skip events with invalid dates
                 return null;
               }
               
@@ -197,13 +192,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                 createdAt: event.createdAt ? new Date(event.createdAt) : undefined
               };
               
-              console.log('Transformed event:', {
-                ...transformedEvent,
-                organizerId: typeof organizerId === 'object' ? organizerId._id : organizerId,
-                createdBy: typeof createdBy === 'object' ? createdBy._id : createdBy
-              });
-              
-              return transformedEvent;
+              // Return transformed event
+              return {
+                ...event,
+                id: event._id, // Map MongoDB _id to id
+                organizerId: event.organizerId?._id || event.organizerId,
+                createdBy: event.createdBy?._id || event.createdBy,
+                startTime,
+                endTime,
+                createdAt: event.createdAt ? new Date(event.createdAt) : undefined
+              };
             } catch (dateError) {
               console.error('Error parsing date for event:', event.id, dateError);
               return null;
@@ -302,22 +300,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
-  const fetchAllUsers = async (): Promise<User[]> => {
+  const fetchAllUsers = useCallback(async (): Promise<User[]> => {
     if (user?.role !== 'admin') {
-      console.log('Access denied: User is not an admin');
       return [];
     }
     
-    setLoading(prev => ({ ...prev, users: true }));
-    setError(null);
-    
     try {
-      console.log('Fetching all users...');
       const response = await apiService.getAllUsers();
-      console.log('Users API response:', response);
       
       if (response?.success && response.data?.users) {
-        const users = response.data.users.map(user => ({
+        return response.data.users.map(user => ({
           id: user._id || user.id,
           name: user.name || 'Unknown User',
           email: user.email || '',
@@ -326,32 +318,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           cancelledBookings: user.cancelledBookings || 0,
           isBlocked: user.isBlocked || false,
         }));
-        console.log(`Fetched ${users.length} users`);
-        return users;
       }
       return [];
     } catch (err) {
       console.error('Error fetching all users:', err);
-      setError('Failed to fetch users');
       return [];
-    } finally {
-      setLoading(prev => ({ ...prev, users: false }));
     }
-  };
+  }, [user?.role]);
 
-  // Refresh all data
-  useEffect(() => {
-    if (user) {
-      refreshData();
-    } else {
-      // Clear data when user logs out
-      setEvents([]);
-      setBookings([]);
-      setFeedback([]);
-      setNotifications([]);
-      setOrganizers([]);
-    }
-  }, [user]);
+  // Track initial load to prevent duplicate fetches
+  const initialLoad = useRef(true);
+  const prevUser = useRef(user);
 
   const refreshData = async () => {
     if (!user) return;
@@ -385,20 +362,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (err) {
       console.error('Error refreshing data:', err);
       setError('Failed to refresh data');
+    } finally {
+      initialLoad.current = false;
     }
   };
 
-  // Load data when user changes
+  // Single effect to handle data loading
   useEffect(() => {
-    if (user) {
-      refreshData();
-    } else {
-      // Clear data when user logs out
-      setEvents([]);
-      setBookings([]);
-      setFeedback([]);
-      setNotifications([]);
-      setOrganizers([]);
+    // Only run if user changed or on initial load
+    if (initialLoad.current || prevUser.current !== user) {
+      if (user) {
+        refreshData();
+      } else {
+        // Clear data when user logs out
+        setEvents([]);
+        setBookings([]);
+        setFeedback([]);
+        setNotifications([]);
+        setOrganizers([]);
+      }
+      prevUser.current = user;
     }
   }, [user]);
 
@@ -444,60 +427,96 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
-  // Create booking
+  // Simplified booking function
   const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<boolean> => {
+    console.log('=== DEBUG: Starting booking process ===');
+    
+    // Debug: Check auth context
+    console.log('Auth context user:', user);
+    
+    // Get current user from localStorage as fallback
+    const storedUser = localStorage.getItem('eventManagementUser');
+    const currentUser = user || (storedUser ? JSON.parse(storedUser) : null);
+    const token = localStorage.getItem('eventManagementToken');
+    
+    console.log('Stored user from localStorage:', storedUser);
+    console.log('Current user object:', currentUser);
+    console.log('Auth token exists:', !!token);
+    
+    // Check for either id or _id since different APIs might use different formats
+    const userId = currentUser?._id || currentUser?.id;
+    
+    if (!userId || !token) {
+      console.error('No user ID or token found. User ID:', userId, 'Token exists:', !!token);
+      setError('Please log in to book events');
+      return false;
+    }
+    
     try {
-      if (!user?.id) {
-        setError('User not authenticated');
-        return false;
-      }
-      
-      console.log('Creating booking with data:', bookingData); // Debug log
-      
-      // Create the booking with all required fields
+      // Prepare the booking data
+      const userId = currentUser._id || currentUser.id;
       const bookingToCreate = {
-        ...bookingData,
-        attendeeId: user.id,
-        bookedAt: new Date().toISOString(),
-        status: 'active' as const
+        eventId: bookingData.eventId,
+        attendeeId: userId,
+        attendeeName: (bookingData.attendeeName || currentUser.name || '').trim(),
+        attendeeEmail: (bookingData.attendeeEmail || currentUser.email || '').trim(),
+        attendeePhone: (bookingData.attendeePhone || '').trim()
       };
       
-      console.log('Sending booking to API:', bookingToCreate);
+      console.log('Creating booking with data:', bookingToCreate);
       
-      const response = await apiService.createBooking(bookingToCreate);
-      console.log('Booking API response:', response); // Debug log
-
-      if (response?.success && response.data?.booking) {
-        // Transform the API response to match our Booking type
+      console.log('Sending booking request:', bookingToCreate);
+      
+      // Make the API request directly with fetch to avoid any issues with the apiService
+      const response = await fetch('http://localhost:5000/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingToCreate)
+      });
+      
+      const data = await response.json();
+      console.log('Booking response:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+      
+      if (data.success && data.data?.booking) {
+        // Update local state
         const newBooking: Booking = {
-          id: response.data.booking._id || response.data.booking.id,
-          eventId: response.data.booking.eventId,
-          attendeeId: user.id,
-          attendeeName: response.data.booking.attendeeName || user.name || '',
-          attendeeEmail: response.data.booking.attendeeEmail || user.email || '',
-          attendeePhone: response.data.booking.attendeePhone || '',
-          bookedAt: new Date(response.data.booking.bookedAt || new Date()),
+          id: data.data.booking._id || data.data.booking.id,
+          eventId: data.data.booking.eventId,
+          attendeeId: currentUser.id,
+          attendeeName: data.data.booking.attendeeName || currentUser.name || '',
+          attendeeEmail: data.data.booking.attendeeEmail || currentUser.email || '',
+          attendeePhone: data.data.booking.attendeePhone || bookingData.attendeePhone || '',
+          bookedAt: new Date(data.data.booking.bookedAt || new Date()),
           status: 'active'
         };
         
-        // Update the local state
-        setBookings(prevBookings => [...prevBookings, newBooking]);
+        setBookings(prev => [...prev, newBooking]);
         
-        // Also update the events to mark this event as booked
+        // Update event capacity
         setEvents(prevEvents => 
           prevEvents.map(event => 
             event.id === bookingData.eventId 
-              ? { ...event, isBooked: true }
+              ? { 
+                  ...event, 
+                  capacity: Math.max(0, (event.capacity || 1) - 1)
+                }
               : event
           )
         );
         
-        console.log('Successfully created booking:', newBooking);
+        console.log('Booking created successfully!');
         return true;
       }
       
-      setError(response?.message || 'Failed to create booking');
-      return false;
+      throw new Error(data.message || 'Failed to create booking');
+      
     } catch (error: any) {
       console.error('Error creating booking:', error);
       setError(error.message || 'Failed to create booking');

@@ -66,25 +66,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await apiService.login(email, password);
       
-      if (response.success && response.data) {
-        const { user, token } = response.data;
+      if (response.success && response.data?.user && response.data?.token) {
+        // Store token and user data in localStorage
+        localStorage.setItem('eventManagementToken', response.data.token);
+        localStorage.setItem('eventManagementUser', JSON.stringify(response.data.user));
         
-        // Store token and user data
-        localStorage.setItem('eventManagementToken', token);
-        localStorage.setItem('eventManagementUser', JSON.stringify(user));
+        // Set the token in the API service
+        apiService.setAuthToken(response.data.token);
         
-        setUser(user);
-        setIsLoading(false);
-        return true;
+        // Update the user state
+        setUser(response.data.user);
+        
+        // Verify the user is actually logged in
+        const userResponse = await apiService.getCurrentUser();
+        if (userResponse.success && userResponse.data?.user) {
+          setUser(userResponse.data.user);
+          return true;
+        } else {
+          // If we can't get the current user, clear the session
+          localStorage.removeItem('eventManagementToken');
+          localStorage.removeItem('eventManagementUser');
+          setUser(null);
+          setError('Failed to verify user session');
+          return false;
+        }
       } else {
         setError(response.message || 'Login failed');
-        setIsLoading(false);
         return false;
       }
     } catch (error: any) {
-      setError(error.message || 'Login failed');
-      setIsLoading(false);
+      console.error('Login error:', error);
+      setError(error.message || 'An error occurred during login');
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 

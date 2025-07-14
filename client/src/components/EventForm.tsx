@@ -21,9 +21,7 @@ const EventForm: React.FC<EventFormProps> = ({ event, organizers, onSubmit, onCa
   });
   const [validationError, setValidationError] = useState('');
 
-  // Debug: Log organizers and event data
-  console.log('EventForm - organizers:', organizers);
-  console.log('EventForm - event:', event);
+  // Initialize form with event data or default values
 
   useEffect(() => {
     if (event) {
@@ -50,8 +48,6 @@ const EventForm: React.FC<EventFormProps> = ({ event, organizers, onSubmit, onCa
         ...prev,
         organizerId: organizers[0]._id || organizers[0].id // Handle both MongoDB _id and client-side id
       }));
-    } else {
-      console.warn('No organizers available in EventForm');
     }
   }, [event, organizers]);
 
@@ -59,9 +55,7 @@ const EventForm: React.FC<EventFormProps> = ({ event, organizers, onSubmit, onCa
     e.preventDefault();
     setValidationError('');
     
-    // Debug: Log form data
-    console.log('Form data:', formData);
-    console.log('Organizers available:', organizers);
+    // Validate form data before submission
     
     // Validate required fields
     if (!formData.title.trim()) {
